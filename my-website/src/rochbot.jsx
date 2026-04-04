@@ -558,6 +558,7 @@ export default function RochBot() {
   const [messages, setMessages] = useState([BOT_INTRO]);
   const [input, setInput]       = useState("");
   const [loading, setLoading]   = useState(false);
+  const [slowLoad, setSlowLoad] = useState(false);
   const [showDot, setShowDot]   = useState(true);
   // Voice state
   const [listening, setListening]     = useState(false);
@@ -665,17 +666,31 @@ export default function RochBot() {
 
     let reply = null;
 
+    const slowTimer = setTimeout(() => setSlowLoad(true), 5000);
     try {
-      const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
-      const res = await fetch(`${API}/api/rochbot`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: withUser }),
-        signal: AbortSignal.timeout(10000),
-      });
-      const data = await res.json();
-      if (data.reply) reply = data.reply;
+      const groqKey = import.meta.env.VITE_GROQ_API_KEY;
+      if (groqKey) {
+        const systemPrompt = `You are Roch-Bot, the smart AI assistant built into Rochell Reponte's portfolio website. Rochell is a Frontend Developer based in Cebu, Philippines, graduating BS Computer Science in 2026. She specializes in React & modern JavaScript. Her skills: HTML/CSS 95%, React 90%, JavaScript 88%, Tailwind 85%, Git 80%, Node.js 75%. Projects: E-Commerce Platform (React/Node/MongoDB), Task Manager App (React/Firebase/Tailwind), Portfolio Website (React/Vite), Weather Dashboard (JS/Chart.js). She is immediately available for opportunities. You can help with: questions about Rochell, coding (HTML, CSS, JS, React, Python, Git, SQL), math, text summarization, and web development. Be friendly and helpful. Use bold for key terms. Provide code examples when relevant.`;
+        const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${groqKey}` },
+          body: JSON.stringify({
+            model: "llama-3.3-70b-versatile",
+            messages: [
+              { role: "system", content: systemPrompt },
+              ...withUser.filter(m => m.role === "user" || m.role === "assistant").slice(-20).map(m => ({ role: m.role, content: m.content })),
+            ],
+            max_tokens: 700,
+            temperature: 0.7,
+          }),
+          signal: AbortSignal.timeout(30000),
+        });
+        const data = await res.json();
+        if (data.choices?.[0]?.message?.content) reply = data.choices[0].message.content;
+      }
     } catch { /* fall through */ }
+    clearTimeout(slowTimer);
+    setSlowLoad(false);
 
     if (!reply) reply = getReply(userMsg, withUser);
 
@@ -796,8 +811,11 @@ export default function RochBot() {
           {loading && (
             <div style={{ display:"flex", alignItems:"flex-end", gap:8 }}>
               <div style={{ width:30, height:30, borderRadius:"50%", background:"linear-gradient(135deg,#1a1a2e,#3a3a5e)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:800, color:"#fafaf8", fontFamily:"'Playfair Display',serif", flexShrink:0 }}>R</div>
-              <div style={{ padding:"12px 16px", background:"#fff", borderRadius:"18px 18px 18px 4px", border:"1px solid #f0efe9", boxShadow:"0 2px 8px rgba(26,26,46,0.07)", display:"flex", gap:5, alignItems:"center" }}>
-                {[0,1,2].map(d => <span key={d} style={{ width:7, height:7, borderRadius:"50%", background:"#c8c4b8", display:"inline-block", animation:`rochbot-typing 1.2s ease-in-out ${d*0.2}s infinite` }} />)}
+              <div style={{ padding:"12px 16px", background:"#fff", borderRadius:"18px 18px 18px 4px", border:"1px solid #f0efe9", boxShadow:"0 2px 8px rgba(26,26,46,0.07)", display:"flex", flexDirection:"column", gap:6 }}>
+                <div style={{ display:"flex", gap:5, alignItems:"center" }}>
+                  {[0,1,2].map(d => <span key={d} style={{ width:7, height:7, borderRadius:"50%", background:"#c8c4b8", display:"inline-block", animation:`rochbot-typing 1.2s ease-in-out ${d*0.2}s infinite` }} />)}
+                </div>
+                {slowLoad && <span style={{ fontSize:11, color:"#8a8a9e", fontFamily:"'Syne',sans-serif" }}>⏳ Waking up server, please wait…</span>}
               </div>
             </div>
           )}
