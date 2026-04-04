@@ -1,6 +1,10 @@
 # MyPortfolio
 
+[![GitHub Repo](https://github.com/Roch-R/myportfolio/actions/workflows/ci.yml/badge.svg)](https://github.com/Roch-R/myportfolio)
+
 Modern React portfolio website built with Vite, Tailwind CSS, GSAP animations, and shadcn/ui components.
+
+**Repository:** https://github.com/Roch-R/myportfolio
 
 ## Features
 - 3D Hero section with orbital images
@@ -21,15 +25,16 @@ Modern React portfolio website built with Vite, Tailwind CSS, GSAP animations, a
 
 ## Getting Started
 
-### Prerequisites
-- Node.js 18+
-
-### Installation
+### Clone from GitHub
 ```bash
-cd my-website
+git clone https://github.com/Roch-R/myportfolio.git
+cd myportfolio/my-website
 npm install
 npm run dev
 ```
+
+### Prerequisites
+- Node.js 18+
 
 ### Build for Production
 ```bash
@@ -53,9 +58,10 @@ my-website/
 ```
 
 ## Backend (Optional)
-portfolio-backend/server.js - Express server with AI integrations (Anthropic, Google Gemini, Nodemailer)
+`portfolio-backend/server.js` - Express server with AI integrations (Anthropic, Google Gemini, Nodemailer)
 
-Live Demo: [Deployed on Vercel]
+## Live Demo
+[View Deployed Site](https://myportfolio.vercel.app) (update with your Vercel URL)
 
 ## License
 MIT
