@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
+import emailjs from "@emailjs/browser";
 import profileImage from "./assets/download-removebg-preview.png";
 import OrbitImages from "./OrbitImages";
 import ParticleBackground from "./praticalbackground";
@@ -368,9 +369,7 @@ export default function Portfolio() {
   const [formData, setFormData] = useState({ name: "", email: "", message: "" });
   const [submitted, setSubmitted] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpInput, setOtpInput] = useState("");
-  const [otpError, setOtpError] = useState("");
+  const [formError, setFormError] = useState("");
   const [sending, setSending] = useState(false);
   const [activeProject, setActiveProject] = useState(null);
 
@@ -416,31 +415,20 @@ export default function Portfolio() {
 
   const goTo = id => { document.getElementById(id)?.scrollIntoView({ behavior: "smooth" }); setMenuOpen(false); };
 
-  const handleSendOtp = async () => {
-    if (!formData.name || !formData.email || !formData.message) { setOtpError("Please fill all fields first."); return; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) { setOtpError("Please enter a valid email address."); return; }
-    setSending(true); setOtpError("");
+  const handleSubmit = async () => {
+    if (!formData.name || !formData.email || !formData.message) { setFormError("Please fill all fields first."); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) { setFormError("Please enter a valid email address."); return; }
+    setSending(true); setFormError("");
     try {
-      const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
-      const res = await fetch(`${API}/api/send-otp`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(formData) });
-      const data = await res.json();
-      if (data.success) setOtpSent(true); else setOtpError(data.message || "Failed to send OTP.");
-    } catch { setOtpError("Failed to send OTP. Make sure backend is running!"); }
-    setSending(false);
-  };
-
-  const handleVerifyOtp = async () => {
-    if (!otpInput || otpInput.length !== 6) { setOtpError("Please enter the 6-digit code."); return; }
-    setSending(true); setOtpError("");
-    try {
-      const API = import.meta.env.VITE_API_URL || "http://localhost:5000";
-      const res = await fetch(`${API}/api/verify-otp`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: formData.email, otp: otpInput }) });
-      const data = await res.json();
-      if (data.success) {
-        setSubmitted(true);
-        setTimeout(() => { setSubmitted(false); setOtpSent(false); setOtpInput(""); setFormData({ name: "", email: "", message: "" }); }, 3000);
-      } else setOtpError(data.message || "Invalid OTP. Please try again.");
-    } catch { setOtpError("Error verifying OTP."); }
+      await emailjs.send(
+        import.meta.env.VITE_EMAILJS_SERVICE_ID,
+        import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+        { from_name: formData.name, from_email: formData.email, message: formData.message },
+        import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+      );
+      setSubmitted(true);
+      setTimeout(() => { setSubmitted(false); setFormData({ name: "", email: "", message: "" }); }, 3000);
+    } catch { setFormError("Failed to send message. Please try again."); }
     setSending(false);
   };
 
@@ -866,24 +854,6 @@ export default function Portfolio() {
                     <p style={{ marginTop: 16, color: "#1a1a2e", fontWeight: 600, fontSize: 16 }}>Message sent!</p>
                     <p style={{ marginTop: 4, color: "#8a8a9e", fontSize: 13 }}>I'll get back to you soon.</p>
                   </div>
-                ) : otpSent ? (
-                  <div style={{ textAlign: "center", padding: "24px 0" }}>
-                    <div style={{ fontSize: 48, marginBottom: 16 }}>📧</div>
-                    <p style={{ fontSize: 16, fontWeight: 600, color: "#1a1a2e", marginBottom: 8 }}>OTP sent to {formData.email}</p>
-                    <p style={{ fontSize: 13, color: "#8a8a9e", marginBottom: 24 }}>Check your inbox and enter the 6-digit code below.</p>
-                    <input className="form-input" type="text" maxLength={6} value={otpInput}
-                      onChange={e => { setOtpInput(e.target.value.replace(/\D/g,"")); setOtpError(""); }}
-                      style={{ ...s.input, textAlign: "center", fontSize: 24, letterSpacing: 12, fontWeight: 700, fontFamily: "'Playfair Display',serif", maxWidth: 280, margin: "0 auto" }}
-                      placeholder="------" />
-                    {otpError && <p style={{ color: otpError.includes("✅") ? "#2d8a4e" : "#e74c3c", fontSize: 13, marginTop: 12 }}>{otpError}</p>}
-                    <button className="btn-magnetic" style={{ ...s.btnDark, width: "100%", marginTop: 20, padding: "16px 32px", opacity: sending ? 0.6 : 1 }} onClick={handleVerifyOtp} disabled={sending}>
-                      {sending ? "Verifying..." : "Verify & Send →"}
-                    </button>
-                    <button onClick={() => { setOtpSent(false); setOtpError(""); setOtpInput(""); }}
-                      style={{ background: "none", border: "none", color: "#8a8a9e", fontSize: 13, marginTop: 16, cursor: "pointer", fontFamily: "'Syne',sans-serif" }}>
-                      ← Back to form
-                    </button>
-                  </div>
                 ) : (
                   <div>
                     <div className="form-row" style={s.formRow}>
@@ -900,9 +870,9 @@ export default function Portfolio() {
                       <label style={s.label}>Message</label>
                       <textarea className="form-input" rows={5} value={formData.message} onChange={e => setFormData({ ...formData, message: e.target.value })} style={{ ...s.input, resize: "vertical", fontFamily: "'Syne',sans-serif" }} placeholder="Tell me about the opportunity..." />
                     </div>
-                    {otpError && <p style={{ color: "#e74c3c", fontSize: 13, marginBottom: 8 }}>{otpError}</p>}
-                    <button className="btn-magnetic" style={{ ...s.btnDark, width: "100%", marginTop: 12, padding: "16px 32px", opacity: sending ? 0.6 : 1 }} onClick={handleSendOtp} disabled={sending}>
-                      {sending ? "Sending OTP..." : "Send OTP to Email →"}
+                    {formError && <p style={{ color: "#e74c3c", fontSize: 13, marginBottom: 8 }}>{formError}</p>}
+                    <button className="btn-magnetic" style={{ ...s.btnDark, width: "100%", marginTop: 12, padding: "16px 32px", opacity: sending ? 0.6 : 1 }} onClick={handleSubmit} disabled={sending}>
+                      {sending ? "Sending..." : "Send Message →"}
                     </button>
                   </div>
                 )}
