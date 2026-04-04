@@ -1,0 +1,9 @@
+node_modules/
+package-lock.json
+.env
+*.log
+dist/
+.DS_Store
+Thumbs.db
+.vscode/settings.json
+!.vscode/mcp.json
