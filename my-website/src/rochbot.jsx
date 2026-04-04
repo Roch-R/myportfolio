@@ -208,7 +208,7 @@ const ROCHELL_KB = [
 // ── CSS Help ──────────────────────────────────────────────────────────────────
 const CSS_KB = [
   {
-    keys: ["center div", "center element", "center in css", "horizontally center", "vertically center", "center box"],
+    keys: ["center div", "center a div", "center element", "center in css", "how to center", "horizontally center", "vertically center", "center box"],
     reply: `**3 ways to center a div in CSS:**\n\n**1. Flexbox (recommended):**\n\`\`\`\n.parent {\n  display: flex;\n  justify-content: center;\n  align-items: center;\n}\n\`\`\`\n\n**2. CSS Grid (cleanest):**\n\`\`\`\n.parent {\n  display: grid;\n  place-items: center;\n}\n\`\`\`\n\n**3. Absolute + Transform:**\n\`\`\`\n.child {\n  position: absolute;\n  top: 50%; left: 50%;\n  transform: translate(-50%, -50%);\n}\n\`\`\``,
   },
   {
