@@ -1,0 +1,1 @@
+# GitHub Update Plan for myportfolio\n\n## Status: Planning\n\n1. [] Clean git status (remove deleted .env.example)\n2. [] Commit and push\n3. [] Verify on GitHub\n4. [] Create README.md if missing\n5. [] Test build/deploy\n\n## Notes\n- Repo already connected\n- Frontend ready in my-website/\n
