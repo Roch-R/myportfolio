@@ -112,16 +112,23 @@ export default function ParticleBackground() {
   const mouseRef = useRef({ x: -9999, y: -9999 });
   const particlesRef = useRef([]);
   const rafRef = useRef(null);
+  // Cache dimensions to avoid reading window on every frame
+  const dimsRef = useRef({ w: 0, h: 0 });
+  // Throttle mouse updates to ~30fps
+  const lastMouseUpdateRef = useRef(0);
+  // Skip connection drawing every other frame
+  const frameCountRef = useRef(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    const dpr = window.devicePixelRatio || 1;
+    const ctx = canvas.getContext("2d", { alpha: true });
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
     function resize() {
       const w = window.innerWidth;
       const h = window.innerHeight;
+      dimsRef.current = { w, h };
       canvas.width = w * dpr;
       canvas.height = h * dpr;
       canvas.style.width = w + "px";
@@ -131,27 +138,27 @@ export default function ParticleBackground() {
 
     function init() {
       resize();
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      const count = Math.min(140, Math.floor((w * h) / 3500));
+      const { w, h } = dimsRef.current;
+      // Reduced max from 140 → 70 particles
+      const count = Math.min(70, Math.floor((w * h) / 7000));
       particlesRef.current = [];
       for (let i = 0; i < count; i++) {
         particlesRef.current.push(new Particle(w, h));
       }
     }
 
-    function drawConnections() {
-      const particles = particlesRef.current;
-      const mx = mouseRef.current.x;
-      const my = mouseRef.current.y;
-      const maxDist = 130;
+    function drawConnections(particles, mx, my, w, h) {
+      // Reduced connection distance from 130 → 100 to cut pair checks
+      const maxDist = 100;
+      const maxDistSq = maxDist * maxDist;
 
       for (let i = 0; i < particles.length; i++) {
         for (let j = i + 1; j < particles.length; j++) {
           const dx = particles[i].x - particles[j].x;
           const dy = particles[i].y - particles[j].y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < maxDist) {
+          const distSq = dx * dx + dy * dy;
+          if (distSq < maxDistSq) {
+            const dist = Math.sqrt(distSq);
             const alpha = (1 - dist / maxDist) * 0.08;
             ctx.strokeStyle = `rgba(99,102,241,${alpha})`;
             ctx.lineWidth = 0.5;
@@ -165,8 +172,9 @@ export default function ParticleBackground() {
         if (mx > -999) {
           const dxM = mx - particles[i].x;
           const dyM = my - particles[i].y;
-          const distM = Math.sqrt(dxM * dxM + dyM * dyM);
-          if (distM < 220) {
+          const distMSq = dxM * dxM + dyM * dyM;
+          if (distMSq < 220 * 220) {
+            const distM = Math.sqrt(distMSq);
             const alpha = (1 - distM / 220) * 0.25;
             ctx.strokeStyle = `rgba(99,102,241,${alpha})`;
             ctx.lineWidth = 0.7;
@@ -177,44 +185,48 @@ export default function ParticleBackground() {
           }
         }
       }
+      // suppress unused param warnings (w, h kept for signature clarity)
+      void w; void h;
     }
 
     function animate() {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
+      const { w, h } = dimsRef.current;
       const t = Date.now() * 0.0003;
       const mx = mouseRef.current.x;
       const my = mouseRef.current.y;
+      frameCountRef.current++;
 
       ctx.clearRect(0, 0, w, h);
 
-      // Ambient gradient blobs
-      const g1 = ctx.createRadialGradient(
-        w * 0.25 + Math.sin(t) * 100, h * 0.35 + Math.cos(t * 0.7) * 80,
-        0, w * 0.25, h * 0.35, w * 0.45
-      );
-      g1.addColorStop(0, "rgba(99,102,241,0.045)");
-      g1.addColorStop(1, "rgba(255,255,255,0)");
-      ctx.fillStyle = g1;
-      ctx.fillRect(0, 0, w, h);
+      // Ambient gradient blobs — only redraw every 2 frames
+      if (frameCountRef.current % 2 === 0) {
+        const g1 = ctx.createRadialGradient(
+          w * 0.25 + Math.sin(t) * 100, h * 0.35 + Math.cos(t * 0.7) * 80,
+          0, w * 0.25, h * 0.35, w * 0.45
+        );
+        g1.addColorStop(0, "rgba(99,102,241,0.045)");
+        g1.addColorStop(1, "rgba(255,255,255,0)");
+        ctx.fillStyle = g1;
+        ctx.fillRect(0, 0, w, h);
 
-      const g2 = ctx.createRadialGradient(
-        w * 0.75 + Math.cos(t * 0.5) * 70, h * 0.65 + Math.sin(t * 0.9) * 60,
-        0, w * 0.75, h * 0.65, w * 0.4
-      );
-      g2.addColorStop(0, "rgba(236,72,153,0.03)");
-      g2.addColorStop(1, "rgba(255,255,255,0)");
-      ctx.fillStyle = g2;
-      ctx.fillRect(0, 0, w, h);
+        const g2 = ctx.createRadialGradient(
+          w * 0.75 + Math.cos(t * 0.5) * 70, h * 0.65 + Math.sin(t * 0.9) * 60,
+          0, w * 0.75, h * 0.65, w * 0.4
+        );
+        g2.addColorStop(0, "rgba(236,72,153,0.03)");
+        g2.addColorStop(1, "rgba(255,255,255,0)");
+        ctx.fillStyle = g2;
+        ctx.fillRect(0, 0, w, h);
 
-      const g3 = ctx.createRadialGradient(
-        w * 0.5 + Math.sin(t * 0.3) * 90, h * 0.2 + Math.cos(t * 0.6) * 50,
-        0, w * 0.5, h * 0.2, w * 0.35
-      );
-      g3.addColorStop(0, "rgba(14,165,233,0.03)");
-      g3.addColorStop(1, "rgba(255,255,255,0)");
-      ctx.fillStyle = g3;
-      ctx.fillRect(0, 0, w, h);
+        const g3 = ctx.createRadialGradient(
+          w * 0.5 + Math.sin(t * 0.3) * 90, h * 0.2 + Math.cos(t * 0.6) * 50,
+          0, w * 0.5, h * 0.2, w * 0.35
+        );
+        g3.addColorStop(0, "rgba(14,165,233,0.03)");
+        g3.addColorStop(1, "rgba(255,255,255,0)");
+        ctx.fillStyle = g3;
+        ctx.fillRect(0, 0, w, h);
+      }
 
       // Cursor glow
       if (mx > -999) {
@@ -226,7 +238,10 @@ export default function ParticleBackground() {
         ctx.fillRect(0, 0, w, h);
       }
 
-      drawConnections();
+      // Draw connections every other frame to halve the O(n²) cost
+      if (frameCountRef.current % 2 === 0) {
+        drawConnections(particlesRef.current, mx, my, w, h);
+      }
 
       particlesRef.current.forEach((p) => {
         p.update(w, h, mx, my);
@@ -236,8 +251,11 @@ export default function ParticleBackground() {
       rafRef.current = requestAnimationFrame(animate);
     }
 
-    // Listen on WINDOW so it works even with pointerEvents: none
     function handleMouseMove(e) {
+      const now = performance.now();
+      // Throttle to ~30fps (33ms) to reduce update overhead
+      if (now - lastMouseUpdateRef.current < 33) return;
+      lastMouseUpdateRef.current = now;
       mouseRef.current = { x: e.clientX, y: e.clientY };
     }
 
@@ -251,9 +269,9 @@ export default function ParticleBackground() {
       animate();
     }
 
-    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mousemove", handleMouseMove, { passive: true });
     document.addEventListener("mouseleave", handleMouseLeave);
-    window.addEventListener("resize", handleResize);
+    window.addEventListener("resize", handleResize, { passive: true });
 
     init();
     animate();

@@ -12,7 +12,7 @@ const API = import.meta.env.VITE_API_URL;
 const NAV_LINKS = ["Home", "About", "Skills", "Projects", "Contact"];
 
 const SKILLS = [
-  { name: "React", level: 90, category: "Frontend", icon: "⚛" },
+  { name: "React", level: 90, category: "Frontend", icon: "⚛" }, ,
   { name: "JavaScript", level: 88, category: "Language", icon: "◆" },
   { name: "HTML / CSS", level: 95, category: "Frontend", icon: "✦" },
   { name: "Node.js", level: 75, category: "Backend", icon: "▲" },
@@ -22,12 +22,12 @@ const SKILLS = [
 
 const ORBIT_LOGOS = [
   { name: "JavaScript", icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/javascript/javascript-original.svg" },
-  { name: "HTML5",      icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/html5/html5-original.svg" },
-  { name: "CSS3",       icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/css3/css3-original.svg" },
-  { name: "React",      icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/react/react-original.svg" },
-  { name: "Node.js",    icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/nodejs/nodejs-original.svg" },
-  { name: "Tailwind",   icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/tailwindcss/tailwindcss-original.svg" },
-  { name: "Git",        icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/git/git-original.svg" },
+  { name: "HTML5", icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/html5/html5-original.svg" },
+  { name: "CSS3", icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/css3/css3-original.svg" },
+  { name: "React", icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/react/react-original.svg" },
+  { name: "Node.js", icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/nodejs/nodejs-original.svg" },
+  { name: "Tailwind", icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/tailwindcss/tailwindcss-original.svg" },
+  { name: "Git", icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/git/git-original.svg" },
   { name: "TypeScript", icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/typescript/typescript-original.svg" },
 ];
 
@@ -90,12 +90,12 @@ function Reveal({ children, delay = 0, className = "", type = "fade-up" }) {
   const [ref, visible] = useInView(0.1);
   const base = { transition: `opacity 0.8s cubic-bezier(.16,1,.3,1) ${delay}s, transform 0.8s cubic-bezier(.16,1,.3,1) ${delay}s` };
   const styles = {
-    "fade-up":    { opacity: visible ? 1 : 0, transform: visible ? "none" : "translateY(40px)" },
-    "fade-left":  { opacity: visible ? 1 : 0, transform: visible ? "none" : "translateX(-40px)" },
+    "fade-up": { opacity: visible ? 1 : 0, transform: visible ? "none" : "translateY(40px)" },
+    "fade-left": { opacity: visible ? 1 : 0, transform: visible ? "none" : "translateX(-40px)" },
     "fade-right": { opacity: visible ? 1 : 0, transform: visible ? "none" : "translateX(40px)" },
-    zoom:         { opacity: visible ? 1 : 0, transform: visible ? "none" : "scale(0.85)" },
-    blur:         { opacity: visible ? 1 : 0, filter: visible ? "none" : "blur(12px)", transform: visible ? "none" : "translateY(20px)" },
-    flip:         { opacity: visible ? 1 : 0, transform: visible ? "none" : "perspective(800px) rotateX(30deg) translateY(40px)" },
+    zoom: { opacity: visible ? 1 : 0, transform: visible ? "none" : "scale(0.85)" },
+    blur: { opacity: visible ? 1 : 0, filter: visible ? "none" : "blur(12px)", transform: visible ? "none" : "translateY(20px)" },
+    flip: { opacity: visible ? 1 : 0, transform: visible ? "none" : "perspective(800px) rotateX(30deg) translateY(40px)" },
   };
   return (
     <div ref={ref} className={className} style={{ ...base, ...(styles[type] || styles["fade-up"]) }}>
@@ -261,7 +261,7 @@ function ProjectModal({ project, onClose }) {
               onMouseEnter={e => { e.currentTarget.style.background = "#1a1a2e"; e.currentTarget.style.borderColor = "#1a1a2e"; e.currentTarget.querySelector("svg").style.stroke = "#fff"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.borderColor = "#e8e6de"; e.currentTarget.querySelector("svg").style.stroke = "currentColor"; }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
               </svg>
             </button>
           </div>
@@ -290,14 +290,14 @@ function ProjectModal({ project, onClose }) {
               style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "13px 28px", background: "#1a1a2e", color: "#fafaf8", borderRadius: 12, fontSize: 13, fontWeight: 600, fontFamily: "'Syne',sans-serif", textDecoration: "none", transition: "all 0.3s ease", letterSpacing: 0.3 }}
               onMouseEnter={e => e.currentTarget.style.transform = "translateY(-2px)"}
               onMouseLeave={e => e.currentTarget.style.transform = "none"}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" /></svg>
               View on GitHub
             </a>
             <a href={project.live} target="_blank" rel="noopener noreferrer"
               style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "13px 28px", background: "#fff", color: "#1a1a2e", border: "1.5px solid #e8e6de", borderRadius: 12, fontSize: 13, fontWeight: 600, fontFamily: "'Syne',sans-serif", textDecoration: "none", transition: "all 0.3s ease", letterSpacing: 0.3 }}
               onMouseEnter={e => { e.currentTarget.style.background = "#f4f3ee"; e.currentTarget.style.transform = "translateY(-2px)"; }}
               onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.transform = "none"; }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>
               Live Demo
             </a>
           </div>
@@ -365,8 +365,8 @@ export default function App() {
     return () => ro.disconnect();
   }, []);
 
-  const oRx   = Math.round(colW * 0.36);
-  const oRy   = Math.round(colW * 0.43);
+  const oRx = Math.round(colW * 0.36);
+  const oRy = Math.round(colW * 0.43);
   const oItem = Math.min(44, Math.max(22, Math.round(colW * 0.088)));
   const oCardW = Math.min(220, Math.max(110, Math.round(colW * 0.46)));
   const oCardH = Math.min(280, Math.max(140, Math.round(colW * 0.58)));
@@ -634,7 +634,7 @@ export default function App() {
               </Reveal>
               <Reveal delay={0.55} type="fade-up">
                 <div className="hero-metrics" style={s.heroMetrics}>
-                  {[[4,"+","Projects"],[6,"+","Skills"],[2026,"","Grad Year"]].map(([val,suf,lbl]) => (
+                  {[[4, "+", "Projects"], [6, "+", "Skills"], [2026, "", "Grad Year"]].map(([val, suf, lbl]) => (
                     <div key={lbl} style={s.metric}>
                       <span className="metric-val" style={s.metricVal}><AnimatedNumber value={val} suffix={suf} /></span>
                       <span className="metric-label" style={s.metricLabel}>{lbl}</span>
@@ -681,16 +681,16 @@ export default function App() {
       {/* ═══ MARQUEE ═══ */}
       {(() => {
         const TECH = [
-          { name: "React",      icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/react/react-original.svg" },
+          { name: "React", icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/react/react-original.svg" },
           { name: "JavaScript", icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/javascript/javascript-original.svg" },
-          { name: "HTML5",      icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/html5/html5-original.svg" },
-          { name: "CSS3",       icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/css3/css3-original.svg" },
-          { name: "Node.js",    icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/nodejs/nodejs-original.svg" },
-          { name: "Tailwind",   icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/tailwindcss/tailwindcss-original.svg" },
-          { name: "Vite",       icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/vitejs/vitejs-original.svg" },
-          { name: "Firebase",   icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/firebase/firebase-original.svg" },
-          { name: "Git",        icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/git/git-original.svg" },
-          { name: "GitHub",     icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/github/github-original.svg" },
+          { name: "HTML5", icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/html5/html5-original.svg" },
+          { name: "CSS3", icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/css3/css3-original.svg" },
+          { name: "Node.js", icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/nodejs/nodejs-original.svg" },
+          { name: "Tailwind", icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/tailwindcss/tailwindcss-original.svg" },
+          { name: "Vite", icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/vitejs/vitejs-original.svg" },
+          { name: "Firebase", icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/firebase/firebase-original.svg" },
+          { name: "Git", icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/git/git-original.svg" },
+          { name: "GitHub", icon: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/github/github-original.svg" },
         ];
         return (
           <div style={s.marqueeWrap}>
@@ -733,7 +733,7 @@ export default function App() {
                   I bring strong problem-solving skills, attention to detail, and a collaborative mindset to every team I work with.
                 </ScrambledText>
                 <div className="about-details-grid" style={s.aboutDetails}>
-                  {[["Location","Cebu, Philippines"],["Education","BS Computer Science"],["Focus","Frontend Development"],["Status","Immediate Availability"]].map(([k,v],i) => (
+                  {[["Location", "Cebu, Philippines"], ["Education", "BS Computer Science"], ["Focus", "Frontend Development"], ["Status", "Immediate Availability"]].map(([k, v], i) => (
                     <Reveal key={k} delay={0.3 + i * 0.06} type="fade-up">
                       <div style={s.aboutDetail}><span style={s.detailKey}>{k}</span><span style={s.detailVal}>{v}</span></div>
                     </Reveal>
@@ -793,14 +793,14 @@ export default function App() {
               <div>
                 <p style={s.contactIntro}>I'm actively seeking opportunities where I can apply my skills and grow as a developer. I'd love to hear from you.</p>
                 <div style={{ marginTop: 36 }}>
-                  {[["Email","your.email@example.com"],["Location","Cebu, Philippines"],["Phone","+63 XXX XXX XXXX"]].map(([lbl,val],i) => (
+                  {[["Email", "your.email@example.com"], ["Location", "Cebu, Philippines"], ["Phone", "+63 XXX XXX XXXX"]].map(([lbl, val], i) => (
                     <Reveal key={lbl} delay={0.2 + i * 0.08} type="fade-up">
                       <div className="contact-detail-card" style={s.contactCard}><span style={s.contactCardLabel}>{lbl}</span><span style={s.contactCardVal}>{val}</span></div>
                     </Reveal>
                   ))}
                 </div>
                 <div className="social-links-row" style={s.socialLinks}>
-                  {["GitHub","LinkedIn","Twitter"].map((name,i) => (
+                  {["GitHub", "LinkedIn", "Twitter"].map((name, i) => (
                     <Reveal key={name} delay={0.35 + i * 0.08} type="zoom"><a href="#" className="social-link" style={s.socialBtn}>{name}</a></Reveal>
                   ))}
                 </div>
@@ -892,7 +892,7 @@ export default function App() {
           <span style={s.footerLogo}>R<span style={{ color: "#8a8a9e" }}>.</span></span>
           <p style={s.footerCopy}>© 2026 · Crafted with precision & caffeine</p>
           <div style={{ display: "flex", gap: 20 }}>
-            {["GitHub","LinkedIn","Twitter"].map(name => <a key={name} href="#" className="footer-link" style={s.footerA}>{name}</a>)}
+            {["GitHub", "LinkedIn", "Twitter"].map(name => <a key={name} href="#" className="footer-link" style={s.footerA}>{name}</a>)}
           </div>
         </div>
       </footer>

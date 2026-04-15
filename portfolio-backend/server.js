@@ -82,21 +82,7 @@ app.post('/api/verify-otp', async (req, res) => {
   }
 });
 
-function callGroq(apiKey, messages) {
-  return new Promise((resolve, reject) => {
-    const payload = { model: 'llama-3.3-70b-versatile', messages, max_tokens: 700, temperature: 0.7, stream: false };
-    const bodyStr = JSON.stringify(payload);
-    const options = { hostname: 'api.groq.com', path: '/openai/v1/chat/completions', method: 'POST', headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(bodyStr) } };
-    const req = https.request(options, (res) => {
-      let data = '';
-      res.on('data', chunk => { data += chunk; });
-      res.on('end', () => { try { resolve({ status: res.statusCode, body: JSON.parse(data) }); } catch (e) { resolve({ status: res.statusCode, body: data }); } });
-    });
-    req.on('error', reject);
-    req.write(bodyStr);
-    req.end();
-  });
-}
+// function callGroq removed in favor of streaming directly in the route handler
 
 const ROCH_BOT_SYSTEM = `You are Roch-Bot, the smart AI assistant built into Rochell Reponte's portfolio website.
 
@@ -152,21 +138,76 @@ You can help visitors with:
 - If a question is completely unrelated to tech or Rochell, politely redirect
 - Never mention what AI model or technology powers you`;
 
-app.post('/api/rochbot', async (req, res) => {
+app.post('/api/rochbot', (req, res) => {
   try {
     const { messages } = req.body;
     if (!messages || !Array.isArray(messages)) return res.status(400).json({ error: 'Messages array is required.' });
+    
     const apiKey = process.env.GROQ_API_KEY?.trim();
     if (!apiKey) return res.status(500).json({ error: 'API key not configured.' });
-    const chatMessages = [{ role: 'system', content: ROCH_BOT_SYSTEM }, ...messages.filter(m => m.role === 'user' || m.role === 'assistant').slice(-20).map(m => ({ role: m.role, content: m.content }))];
-    const result = await callGroq(apiKey, chatMessages);
-    if (result.status !== 200) return res.status(500).json({ error: 'Roch-Bot is temporarily unavailable. Please try again later.' });
-    const reply = result.body?.choices?.[0]?.message?.content;
-    if (!reply) return res.status(500).json({ error: 'No response received. Please try again.' });
-    res.json({ reply });
+
+    // Set headers for Server-Sent Events (SSE)
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    
+    const chatMessages = [
+      { role: 'system', content: ROCH_BOT_SYSTEM }, 
+      ...messages.filter(m => m.role === 'user' || m.role === 'assistant')
+                 .slice(-20)
+                 .map(m => ({ role: m.role, content: m.content }))
+    ];
+    
+    const payload = JSON.stringify({ 
+      model: 'llama-3.3-70b-versatile',
+      messages: chatMessages,
+      max_tokens: 1200,
+      temperature: 0.7,
+      stream: true
+    });
+    
+    const options = { 
+      hostname: 'api.groq.com', 
+      path: '/openai/v1/chat/completions', 
+      method: 'POST', 
+      headers: { 
+        'Authorization': `Bearer ${apiKey}`, 
+        'Content-Type': 'application/json', 
+        'Content-Length': Buffer.byteLength(payload) 
+      } 
+    };
+    
+    const groqReq = https.request(options, (groqRes) => {
+      if (groqRes.statusCode !== 200) {
+        let errData = '';
+        groqRes.on('data', chunk => errData += chunk);
+        groqRes.on('end', () => {
+          console.error("Groq API error:", errData);
+          res.write(`data: ${JSON.stringify({ error: "Roch-Bot is temporarily unavailable." })}\n\n`);
+          res.end();
+        });
+        return;
+      }
+      
+      // Successfully connected, pipe the SSE stream directly to the client
+      groqRes.pipe(res);
+    });
+    
+    groqReq.on('error', (e) => {
+      console.error('❌ Groq connection error:', e.message);
+      res.end();
+    });
+    
+    req.on('close', () => {
+      // Client disconnected, abort the request to Groq
+      groqReq.destroy();
+    });
+    
+    groqReq.write(payload);
+    groqReq.end();
   } catch (error) {
-    console.error('❌ Roch-Bot error:', error.message);
-    res.status(500).json({ error: 'Roch-Bot is temporarily unavailable. Please try again later.' });
+    console.error('❌ Roch-Bot endpoint error:', error.message);
+    res.end();
   }
 });
 

@@ -1,5 +1,10 @@
 {
   "buildCommand": "cd my-website && npm install && npm run build",
   "outputDirectory": "my-website/dist",
-  "installCommand": "echo skip"
+  "installCommand": "echo skip",
+  "functions": {
+    "api/rochbot.js": {
+      "runtime": "nodejs20.x"
+    }
+  }
 }

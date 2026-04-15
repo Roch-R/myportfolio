@@ -154,7 +154,7 @@ const ElectricBorder = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const octaves = 10;
+    const octaves = 6;
     const lacunarity = 1.6;
     const gain = 0.7;
     const amplitude = chaos;
@@ -182,6 +182,12 @@ const ElectricBorder = ({
 
     const drawElectricBorder = currentTime => {
       if (!canvas || !ctx) return;
+
+      // Cap to ~30fps — skip frame if less than 33ms since last draw
+      if (lastFrameTimeRef.current && currentTime - lastFrameTimeRef.current < 33) {
+        animationRef.current = requestAnimationFrame(drawElectricBorder);
+        return;
+      }
 
       const deltaTime = (currentTime - lastFrameTimeRef.current) / 1000;
       timeRef.current += deltaTime * speed;

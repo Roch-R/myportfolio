@@ -49,6 +49,8 @@ const SUGGESTIONS = [
   "Summarize Rochell for me",
   "What projects has she built?",
   "How do I center a div in CSS?",
+  "Explain React hooks with examples",
+  "What's her strongest skill?",
   "Solve: (150 / 3) + 25 * 2",
 ];
 
@@ -489,47 +491,153 @@ function getReply(input, history) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 7. MESSAGE FORMATTER — bold, inline code, code blocks
+// 7. CODE BLOCK with copy button
 // ─────────────────────────────────────────────────────────────────────────────
-function formatMessage(text) {
+function CodeBlock({ code, lang }) {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    navigator.clipboard?.writeText(code).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+  return (
+    <div style={{ margin: "8px 0", borderRadius: 10, overflow: "hidden", border: "1px solid rgba(255,255,255,0.05)" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#0d0d1e", padding: "5px 12px" }}>
+        <span style={{ fontSize: 10, color: "#6366f1", fontFamily: "monospace", letterSpacing: 1, textTransform: "uppercase" }}>{lang || "code"}</span>
+        <button onClick={copy}
+          style={{ background: "none", border: "none", cursor: "pointer", color: copied ? "#2d8a4e" : "rgba(250,250,248,0.45)", fontSize: 11, fontFamily: "'Syne',sans-serif", padding: "2px 6px", borderRadius: 4, transition: "color 0.2s" }}>
+          {copied ? "✓ Copied!" : "Copy"}
+        </button>
+      </div>
+      <pre style={{ background: "#1a1a2e", color: "#e8e6de", padding: "12px 14px", fontSize: 12, lineHeight: 1.65, overflowX: "auto", margin: 0, fontFamily: "'Courier New', monospace", whiteSpace: "pre" }}>
+        {code}
+      </pre>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 7b. MARKDOWN TABLE RENDERER
+// ─────────────────────────────────────────────────────────────────────────────
+function MarkdownTable({ raw, key }) {
+  const lines = raw.trim().split("\n").filter(l => l.includes("|"));
+  if (lines.length < 3) return <span key={key}>{raw}</span>;
+  const parseRow = l => l.split("|").slice(1, -1).map(c => c.trim());
+  const headers = parseRow(lines[0]);
+  const rows = lines.slice(2).map(parseRow);
+  return (
+    <div key={key} style={{ overflowX: "auto", margin: "8px 0" }}>
+      <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 12, fontFamily: "'Syne',sans-serif" }}>
+        <thead>
+          <tr>{headers.map((h, i) => <th key={i} style={{ background: "#f0efe9", padding: "7px 10px", border: "1px solid #e8e6de", textAlign: "left", fontWeight: 700 }}>{h}</th>)}</tr>
+        </thead>
+        <tbody>
+          {rows.map((row, ri) => (
+            <tr key={ri} style={{ background: ri % 2 === 0 ? "#fff" : "#fafaf8" }}>
+              {row.map((cell, ci) => <td key={ci} style={{ padding: "6px 10px", border: "1px solid #e8e6de" }}>{cell}</td>)}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 8. MESSAGE FORMATTER — bold, inline code, code blocks, tables
+// ─────────────────────────────────────────────────────────────────────────────
+function formatMessage(text, isStreaming = false) {
   // Split on code blocks first
-  const codeBlockRe = /```[\s\S]*?```/g;
+  const codeBlockRe = /```([a-z]*)\n?([\s\S]*?)```/g;
   const parts = [];
   let last = 0;
   let match;
   while ((match = codeBlockRe.exec(text)) !== null) {
     if (match.index > last) parts.push({ type: "text", content: text.slice(last, match.index) });
-    parts.push({ type: "code", content: match[0].replace(/^```[a-z]*\n?/, "").replace(/```$/, "") });
+    parts.push({ type: "code", lang: match[1] || "code", content: match[2] });
     last = match.index + match[0].length;
   }
   if (last < text.length) parts.push({ type: "text", content: text.slice(last) });
 
+  // Table regex: header | sep | rows pattern
+  const tableRe = /(\|[^\n]+\|\n\|[\s|:-]+\|\n(?:\|[^\n]+\|\n?)+)/g;
+
   return parts.map((part, pi) => {
     if (part.type === "code") {
-      return (
-        <pre key={pi} style={{ background: "#1a1a2e", color: "#e8e6de", borderRadius: 10, padding: "12px 14px", fontSize: 12, lineHeight: 1.65, overflowX: "auto", margin: "8px 0", fontFamily: "'Courier New', monospace", whiteSpace: "pre" }}>
-          {part.content}
-        </pre>
-      );
+      return <CodeBlock key={pi} code={part.content} lang={part.lang} />;
     }
-    // Inline: **bold** and `code`
-    return part.content.split("\n").map((line, li, arr) => (
-      <span key={`${pi}-${li}`}>
-        {line.split(/(\*\*[^*]+\*\*|`[^`]+`)/g).map((seg, si) => {
-          if (seg.startsWith("**") && seg.endsWith("**"))
-            return <strong key={si}>{seg.slice(2, -2)}</strong>;
-          if (seg.startsWith("`") && seg.endsWith("`"))
-            return <code key={si} style={{ background: "#f0f0f0", color: "#d63384", borderRadius: 4, padding: "1px 5px", fontSize: 12, fontFamily: "monospace" }}>{seg.slice(1, -1)}</code>;
-          return <span key={si}>{seg}</span>;
+
+    // Split text on embedded markdown tables
+    const textContent = part.content;
+    const textParts = [];
+    let tLast = 0;
+    let tMatch;
+    tableRe.lastIndex = 0;
+    while ((tMatch = tableRe.exec(textContent)) !== null) {
+      if (tMatch.index > tLast) textParts.push({ type: "text", content: textContent.slice(tLast, tMatch.index) });
+      textParts.push({ type: "table", content: tMatch[1] });
+      tLast = tMatch.index + tMatch[0].length;
+    }
+    if (tLast < textContent.length) textParts.push({ type: "text", content: textContent.slice(tLast) });
+
+    return (
+      <span key={pi}>
+        {textParts.map((tp, ti) => {
+          if (tp.type === "table") return <MarkdownTable key={ti} raw={tp.content} />;
+          // Inline: **bold** and `code`
+          const lines = tp.content.split("\n");
+          const isLastPart = pi === parts.length - 1 && ti === textParts.length - 1;
+          return lines.map((line, li, arr) => (
+            <span key={`${ti}-${li}`}>
+              {line.split(/(\*\*[^*]+\*\*|`[^`]+`)/g).map((seg, si) => {
+                if (seg.startsWith("**") && seg.endsWith("**"))
+                  return <strong key={si}>{seg.slice(2, -2)}</strong>;
+                if (seg.startsWith("`") && seg.endsWith("`"))
+                  return <code key={si} style={{ background: "#f0f0f0", color: "#d63384", borderRadius: 4, padding: "1px 5px", fontSize: 12, fontFamily: "monospace" }}>{seg.slice(1, -1)}</code>;
+                return <span key={si}>{seg}</span>;
+              })}
+              {/* streaming cursor on the very last line */}
+              {isStreaming && isLastPart && li === arr.length - 1 && (
+                <span style={{ display: "inline-block", width: 2, height: "1em", background: "#1a1a2e", marginLeft: 2, verticalAlign: "text-bottom", animation: "rochbot-cursor 0.8s ease-in-out infinite" }} />
+              )}
+              {li < arr.length - 1 && <br />}
+            </span>
+          ));
         })}
-        {li < arr.length - 1 && <br />}
       </span>
-    ));
+    );
   });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 8. VOICE HELPERS
+// 8a. COPY MESSAGE BUTTON
+// ─────────────────────────────────────────────────────────────────────────────
+function CopyMsgBtn({ text }) {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    // Strip markdown for clipboard
+    const plain = text
+      .replace(/```[\s\S]*?```/g, (m) => m.replace(/```[a-z]*\n?/, "").replace(/```$/, ""))
+      .replace(/\*\*([^*]+)\*\*/g, "$1")
+      .replace(/`([^`]+)`/g, "$1");
+    navigator.clipboard?.writeText(plain).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+  return (
+    <button onClick={copy} title="Copy message"
+      style={{ background:"none", border:"none", cursor:"pointer", fontSize:12, opacity: copied ? 1 : 0.35, transition:"opacity 0.2s", padding:"0 2px", color: copied ? "#2d8a4e" : "inherit" }}
+      onMouseEnter={e => e.currentTarget.style.opacity="1"}
+      onMouseLeave={e => e.currentTarget.style.opacity = copied ? "1" : "0.35"}>
+      {copied ? "✓" : "⎘"}
+    </button>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 9. VOICE HELPERS
 // ─────────────────────────────────────────────────────────────────────────────
 const SpeechRecognitionAPI =
   typeof window !== "undefined"
@@ -557,9 +665,9 @@ export default function RochBot() {
   const [open, setOpen]         = useState(false);
   const [messages, setMessages] = useState([BOT_INTRO]);
   const [input, setInput]       = useState("");
-  const [loading, setLoading]   = useState(false);
-  const [slowLoad, setSlowLoad] = useState(false);
-  const [showDot, setShowDot]   = useState(true);
+  const [loading, setLoading]     = useState(false);
+  const [slowLoad, setSlowLoad]   = useState(false);
+  const [showDot, setShowDot]     = useState(true);
   // Voice state
   const [listening, setListening]     = useState(false);
   const [speaking, setSpeaking]       = useState(false);
@@ -660,46 +768,39 @@ export default function RochBot() {
     if (!userMsg || loading) return;
     stopSpeaking();
     setInput("");
+
     const withUser = [...messages, { role: "user", content: userMsg }];
     setMessages(withUser);
     setLoading(true);
 
-    let reply = null;
-
+    let reply = "";
     const slowTimer = setTimeout(() => setSlowLoad(true), 5000);
+
     try {
-      const groqKey = import.meta.env.VITE_GROQ_API_KEY;
-      if (groqKey) {
-        const systemPrompt = `You are Roch-Bot, the smart AI assistant built into Rochell Reponte's portfolio website. Rochell is a Frontend Developer based in Cebu, Philippines, graduating BS Computer Science in 2026. She specializes in React & modern JavaScript. Her skills: HTML/CSS 95%, React 90%, JavaScript 88%, Tailwind 85%, Git 80%, Node.js 75%. Projects: E-Commerce Platform (React/Node/MongoDB), Task Manager App (React/Firebase/Tailwind), Portfolio Website (React/Vite), Weather Dashboard (JS/Chart.js). She is immediately available for opportunities. You can help with: questions about Rochell, coding (HTML, CSS, JS, React, Python, Git, SQL), math, text summarization, and web development. Be friendly and helpful. Use bold for key terms. Provide code examples when relevant.`;
-        const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${groqKey}` },
-          body: JSON.stringify({
-            model: "llama-3.3-70b-versatile",
-            messages: [
-              { role: "system", content: systemPrompt },
-              ...withUser.filter(m => m.role === "user" || m.role === "assistant").slice(-20).map(m => ({ role: m.role, content: m.content })),
-            ],
-            max_tokens: 700,
-            temperature: 0.7,
-          }),
-          signal: AbortSignal.timeout(30000),
-        });
-        const data = await res.json();
-        if (data.choices?.[0]?.message?.content) reply = data.choices[0].message.content;
-      }
-    } catch { /* fall through */ }
+      const res = await fetch("/api/rochbot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: withUser }),
+      });
+
+      if (!res.ok) throw new Error("Backend error");
+
+      const data = await res.json();
+      reply = data.reply || "";
+      if (!reply) throw new Error("Empty reply");
+
+      setMessages([...withUser, { role: "assistant", content: reply }]);
+    } catch {
+      // Offline / error fallback — use local knowledge base
+      reply = getReply(userMsg, withUser);
+      setMessages([...withUser, { role: "assistant", content: reply }]);
+    }
+
     clearTimeout(slowTimer);
     setSlowLoad(false);
-
-    if (!reply) reply = getReply(userMsg, withUser);
-
-    const nextMessages = [...withUser, { role: "assistant", content: reply }];
-    setMessages(nextMessages);
     setLoading(false);
 
-    // Auto-speak if voice is on
-    if (voiceOn) speak(reply, nextMessages.length - 1);
+    if (voiceOn && reply) speak(reply, withUser.length);
   };
 
   const handleKey = (e) => {
@@ -792,16 +893,21 @@ export default function RochBot() {
                   <div style={{ padding:"11px 15px", borderRadius: isBot ? "18px 18px 18px 4px" : "18px 18px 4px 18px", background: isBot ? "#fff" : "#1a1a2e", color: isBot ? "#1a1a2e" : "#fafaf8", fontSize:13.5, lineHeight:1.7, fontFamily:"'Syne',sans-serif", boxShadow: isBot ? "0 2px 8px rgba(26,26,46,0.07)" : "0 2px 8px rgba(26,26,46,0.2)", border: isBot ? "1px solid #f0efe9" : "none", wordBreak:"break-word", whiteSpace:"pre-wrap" }}>
                     {formatMessage(msg.content)}
                   </div>
-                  {/* Per-message speak/stop button for bot messages */}
+                  {/* Per-message actions for bot messages */}
                   {isBot && (
-                    <button
-                      onClick={() => isThisSpeaking ? stopSpeaking() : speak(msg.content, i)}
-                      title={isThisSpeaking ? "Stop speaking" : "Read aloud"}
-                      style={{ background:"none", border:"none", cursor:"pointer", fontSize:13, opacity: isThisSpeaking ? 1 : 0.35, transition:"opacity 0.2s", padding:"0 2px" }}
-                      onMouseEnter={e => e.currentTarget.style.opacity="1"}
-                      onMouseLeave={e => e.currentTarget.style.opacity = isThisSpeaking ? "1" : "0.35"}>
-                      {isThisSpeaking ? "⏹️" : "🔊"}
-                    </button>
+                    <div style={{ display:"flex", gap:6, alignItems:"center" }}>
+                      {/* Speak / Stop */}
+                      <button
+                        onClick={() => isThisSpeaking ? stopSpeaking() : speak(msg.content, i)}
+                        title={isThisSpeaking ? "Stop speaking" : "Read aloud"}
+                        style={{ background:"none", border:"none", cursor:"pointer", fontSize:13, opacity: isThisSpeaking ? 1 : 0.35, transition:"opacity 0.2s", padding:"0 2px" }}
+                        onMouseEnter={e => e.currentTarget.style.opacity="1"}
+                        onMouseLeave={e => e.currentTarget.style.opacity = isThisSpeaking ? "1" : "0.35"}>
+                        {isThisSpeaking ? "⏹️" : "🔊"}
+                      </button>
+                      {/* Copy message */}
+                      <CopyMsgBtn text={msg.content} />
+                    </div>
                   )}
                 </div>
               </div>
@@ -871,6 +977,7 @@ export default function RochBot() {
         @keyframes rochbot-fadein   { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
         @keyframes rochbot-wave     { 0%,100%{transform:scaleY(0.4)} 50%{transform:scaleY(1.4)} }
         @keyframes rochbot-mic-ring { 0%,100%{box-shadow:0 0 0 4px rgba(229,57,53,0.25)} 50%{box-shadow:0 0 0 10px rgba(229,57,53,0.08)} }
+        @keyframes rochbot-cursor   { 0%,100%{opacity:1} 50%{opacity:0} }
       `}</style>
     </>
   );
