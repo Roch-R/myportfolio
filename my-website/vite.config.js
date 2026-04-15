@@ -26,10 +26,10 @@ export default defineConfig({
     // Split vendor chunks for better long-term caching
     rollupOptions: {
       output: {
-        manualChunks: {
-          react: ["react", "react-dom"],
-          motion: ["motion"],
-          gsap: ["gsap"],
+        manualChunks(id) {
+          if (id.includes("react") || id.includes("react-dom")) return "react";
+          if (id.includes("motion")) return "motion";
+          if (id.includes("gsap")) return "gsap";
         },
       },
     },
