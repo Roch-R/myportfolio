@@ -345,6 +345,7 @@ export default function App() {
   const [scrollProgress, setScrollProgress] = useState(0);
 
   const [otpSent, setOtpSent] = useState(false);
+  const [otpToken, setOtpToken] = useState("");
   const [otpInput, setOtpInput] = useState("");
   const [otpError, setOtpError] = useState("");
   const [sending, setSending] = useState(false);
@@ -405,7 +406,7 @@ export default function App() {
     setOtpError("");
 
     try {
-      const res = await fetch(`${API}/api/send-otp`, {
+      const res = await fetch("/api/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -418,6 +419,7 @@ export default function App() {
       if (!res.ok) {
         setOtpError(data.message || "Failed to send OTP. Please try again.");
       } else {
+        setOtpToken(data.token || "");
         setOtpSent(true);
         setOtpError("");
       }
@@ -439,12 +441,13 @@ export default function App() {
     setOtpError("");
 
     try {
-      const res = await fetch(`${API}/api/verify-otp`, {
+      const res = await fetch("/api/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: formData.email,
           otp: otpInput,
+          token: otpToken,
         }),
       });
       const data = await res.json();
